@@ -202,7 +202,7 @@ class Judey{
             return this;
         }
         return this;
-    }
+    } 
     //値が適性かチェック
     #DataCheck=(value)=>{
         return typeof value === "string" && 
