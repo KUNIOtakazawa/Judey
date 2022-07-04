@@ -5,11 +5,11 @@ class Judey{
     #Parent = null;
     #ChildCount = 0;
 
-    static $id= function(Selecter){return new Judey(Selecter, 1)} 
-    static $cls=function(Selecter){return new Judey(Selecter, 2)} 
-    static $tag=function(Selecter){return new Judey(Selecter, 3)} 
+    static $id= function(Selecter,ans=true){return new Judey(Selecter, 1,ans)} 
+    static $cls=function(Selecter,ans=true){return new Judey(Selecter, 2,ans)} 
+    static $tag=function(Selecter,ans=true){return new Judey(Selecter, 3,ans)} 
 
-    constructor(Selecter,SeachType){
+    constructor(Selecter,SeachType,ans){
         switch(SeachType){
             case 1 :
                 this.#Data = document.getElementById(Selecter);
@@ -28,6 +28,7 @@ class Judey{
         if(SeachType > 1 && this.#Length == 0){
             this.#Data = this.#Data[0];
         }
+        if(ans ===false)return this.#Data;//false時は取得要素を返却して終了。
         //ID設定 
         this.Id = (value)=>{
             if(!this.#DataCheck(value)) return this;
@@ -51,7 +52,7 @@ class Judey{
         //属性値設定
         this.Attr=(key,value)=>{
             if(!this.#DataCheck(key) || typeof value !== "string") return this;
-            if(this.#Length === 0)this.#Data.seAttribute(key,value)
+            if(this.#Length === 0)this.#Data.setAttribute(key,value)
             else{for(let i = 0;i <= this.#Length;i ++){
                     this.#Data[i].setAttribute(key,value);
                 }
@@ -71,6 +72,25 @@ class Judey{
             this.#Data=elem;
             return this;
         }
+        //連続した子要素挿入、セレクタ移行は行わない。
+        this.ChildCreate=(tag,id,cls,text,childcont)=>{
+            if(!this.#DataCheck(tag) && length !==0) return this;
+            if(this.#Parent ===null){
+                this.#Parent =this.#Data;
+            }
+            for(let i=0;i<childcont;i++){
+                const elem = document.createElement(tag);
+                elem.id= typeof id !=="object" ? id+(i+Number(1)) : id[i];
+                elem.classList.add(typeof cls !=="object" ? cls : cls[i]);
+                if(tag=="div" || tag=="span" || tag=="li" || tag=="td" || tag=="th" || tag=="label" || tag=="p"){
+                    elem.innerText = typeof text !=="object" ? text : text[i];
+                }else{
+                    elem.value = typeof text !=="object" ? text : text[i];
+                }
+                this.#Data.appendChild(elem);
+            }
+            return this;
+        }
         //参照セレクタの階層をひとつ戻す。単一要素以外では機能しない。
         this.Breaker=()=>{
             if(this.#ChildCount===0 || this.#Length!==0) return this;
@@ -88,17 +108,31 @@ class Judey{
             if(!this.#DataCheck(value)) return this;
             if(this.#Length === 0)this.#Data.innerText = value;
             else{for(let i = 0;i <= this.#Length;i ++){
-                    this.#Data[i].innerText = value;
+                    this.#Data[i].innerText =
+                    typeof value ==='object' ? value[i] : value;
                 }
             }
             return this;
+        }
+        //設定したプロパティ値を取得
+        this.RetText=(PropartyName)=>{
+            if(!this.#DataCheck(PropartyName)) return null;
+            if(this.#Length === 0)return this.#Data[PropartyName];
+            else{
+                let e = new Array();
+                for(let i = 0;i <= this.#Length;i ++){
+                    e.push(this.#Data[i][PropartyName])
+                }
+                return e.length !==0 ? e : null;
+            }
         }
         //InnerHTML
         this.Html=(value)=>{
             if(!this.#DataCheck(value)) return this;
             if(this.#Length === 0)this.#Data.innerHTML = value;
             else{for(let i = 0;i <= this.#Length;i ++){
-                    this.#Data[i].innerHTML = value;
+                    this.#Data[i].innerHTML = 
+                    typeof value ==='object' ? value[i] : value;
                 }
             }
             return this;
@@ -106,9 +140,9 @@ class Judey{
         //イベント生成
         this.Event=(e,act)=>{
             if(!this.#DataCheck(e) || typeof act !=="function") return this;
-            if(this.#Length === 0)this.#Data.addEventListener(e.act,false);
+            if(this.#Length === 0)this.#Data.addEventListener(e,act,false);
             else{for(let i = 0;i <= this.#Length;i ++){
-                    this.#Data[i].addEventListener(e.act,false);
+                    this.#Data[i].addEventListener(e,act,false);
                 }
             }
             return this;
@@ -116,9 +150,9 @@ class Judey{
         //イベント削除
         this.RemEvent=(e,act)=>{
             if(!this.#DataCheck(e) || typeof act !=="function") return this;
-            if(this.#Length === 0)this.#Data.removeEventListener(e.act,false);
+            if(this.#Length === 0)this.#Data.removeEventListener(e,act,false);
             else{for(let i = 0;i <= this.#Length;i ++){
-                    this.#Data[i].removeEventListener(e.act,false);
+                    this.#Data[i].removeEventListener(e,act,false);
                 }
             }
             return this;
@@ -145,7 +179,7 @@ class Judey{
             return this;
         }
         //格納エレメント返却
-        this.Elem=()=>{return this.#Data};
+         this.Elem=()=>{return this.#Data};
         //子要素の一致するクラスをセレクタに設定する。
         this.Search=(value)=>{
             if(!this.#DataCheck(value) && this.#Length===0 ) return this;
