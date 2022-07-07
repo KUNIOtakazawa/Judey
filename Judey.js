@@ -93,6 +93,11 @@ class Judey{
         }
         //参照セレクタの階層をひとつ戻す。単一要素以外では機能しない。
         this.Breaker=()=>{
+            if(this.#ChildCount ===-1){
+                this.#Data=this.#Parent;
+                this.#ChildCount=0;
+                return this;
+            }
             if(this.#ChildCount===0 || this.#Length!==0) return this;
             if(this.#ChildCount===1 || this.#ChildCount ===-1){
                 this.#Data = this.#Parent;
@@ -199,6 +204,16 @@ class Judey{
                 this.#Data = ary;
                 this.#Length=ary.length-1;
             }
+            return this;
+        }
+        //子要素を全て削除する、セレクターが単一要素時のみ動作する。
+        this.RemChild=()=>{
+            if(this.#Length!==0) return this;
+            let remelem = this.#Data.firstChild;
+            while (!!remelem){
+                remelem.remove();
+                remelem = this.#Data.firstChild;
+            } 
             return this;
         }
         return this;
