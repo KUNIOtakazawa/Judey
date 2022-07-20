@@ -8,6 +8,7 @@ class Judey{
     static $id= function(Selecter,ans=true){return new Judey(Selecter, 1,ans)} 
     static $cls=function(Selecter,ans=true){return new Judey(Selecter, 2,ans)} 
     static $tag=function(Selecter,ans=true){return new Judey(Selecter, 3,ans)} 
+    static $elem=function(Selecter){return new Judey(Selecter,4,true)}
 
     constructor(Selecter,SeachType,ans){
         switch(SeachType){
@@ -20,6 +21,9 @@ class Judey{
                 break;
             case 3 :
                 this.#Data = document.getElementsByTagName(Selecter);
+                break;
+            case 4 :
+                this.#Data = Selecter;
                 break;
             default : return;
         }
@@ -206,7 +210,7 @@ class Judey{
             }
             return this;
         }
-        //子要素を全て削除する、セレクターが単一要素時のみ動作する。
+        //子要素を全て削除する、セレクターが単一要素時のみ。
         this.RemChild=()=>{
             if(this.#Length!==0) return this;
             let remelem = this.#Data.firstChild;
