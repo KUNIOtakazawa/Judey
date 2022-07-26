@@ -15,7 +15,7 @@ class Judey {
     return new Judey(Selecter, 3, ans);
   };
   static $elem = function (Selecter) {
-    return new Judey(Selecter, 4, true);
+    return new Judey(Selecter, 0, true);
   };
   constructor(Selecter, SeachType, ans) {
     switch (SeachType) {
@@ -29,14 +29,14 @@ class Judey {
       case 3:
         this.#Data = document.getElementsByTagName(Selecter);
         break;
-      case 4:
+      case 0:
         this.#Data = Selecter;
-        this.#Length = !this.#Data ? -1 : 0;
+        this.#Length = 0;
         break;
       default:
         return;
     }
-    if (SeachType !== 1) this.#Length = this.#Data.length - 1;
+    if (SeachType > 1) this.#Length = this.#Data.length - 1;
     if (this.#Data.length === 0) return;
     if (SeachType > 1 && this.#Length === 0) {
       this.#Data = this.#Data[0];
