@@ -31,13 +31,14 @@ class Judey {
         break;
       case 4:
         this.#Data = Selecter;
+        this.#Length = !this.#Data ? -1 : 0;
         break;
       default:
         return;
     }
     if (SeachType !== 1) this.#Length = this.#Data.length - 1;
     if (this.#Data.length === 0) return;
-    if (SeachType > 1 && this.#Length == 0) {
+    if (SeachType > 1 && this.#Length === 0) {
       this.#Data = this.#Data[0];
     }
     if (ans === false) return this.#Data; //false時は取得要素を返却して終了。
