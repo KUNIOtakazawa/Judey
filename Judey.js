@@ -64,6 +64,17 @@ class Judey {
       }
       return this;
     };
+    //クラス設定(toggle)
+    this.Toggle = (value) => {
+      if (!this.#DataCheck(value)) return this;
+      if (this.#Length === 0) this.#Data.classList.toggle(value);
+      else {
+        for (let i = 0; i <= this.#Length; i++) {
+          this.#Data[i].classList.toggle(value);
+        }
+      }
+      return this;
+    };
     //属性値設定
     this.Attr = (key, value) => {
       if (!this.#DataCheck(key) || typeof value !== "string") return this;
@@ -192,7 +203,7 @@ class Judey {
       //クラス削除
     };
     //自要素削除
-    this.Rem = ()=>this.#Data.remove();
+    this.Rem = () => this.#Data.remove();
     //指定クラス削除
     this.RemClass = (value) => {
       if (!this.#DataCheck(value)) return this;
@@ -275,17 +286,17 @@ class Judey {
   //値が適性かチェック
   #DataCheck = (value) => {
     return typeof value === "string" && this.#Length >= 0 ? true : false;
-  }
+  };
   //要素生成(parentなし)
-  static Element=(Tag,Id="",Class="")=>{
+  static Element = (Tag, Id = "", Class = "") => {
     const elem = document.createElement(Tag);
     const func = this.$elem(elem);
     return func.Id(Id).Class(Class);
-  }
+  };
   //for代行
-  static For=(Count,func)=>{
-    for(let i =0;i<Count;i++){
+  static For = (Count, func) => {
+    for (let i = 0; i < Count; i++) {
       func();
     }
-  }
+  };
 }
