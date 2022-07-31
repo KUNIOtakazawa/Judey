@@ -5,17 +5,26 @@ class Judey {
   #Parent = null;
   #ChildCount = 0;
 
-  static $id = function (Selecter, ans = true) {
-    return new Judey(Selecter, 1, ans);
+  static $id = function (Selecter) {
+    return new Judey(Selecter, 1, true);
   };
-  static $cls = function (Selecter, ans = true) {
-    return new Judey(Selecter, 2, ans);
+  static $cls = function (Selecter) {
+    return new Judey(Selecter, 2, true);
   };
-  static $tag = function (Selecter, ans = true) {
-    return new Judey(Selecter, 3, ans);
+  static $tag = function (Selecter) {
+    return new Judey(Selecter, 3, true);
   };
   static $elem = function (Selecter) {
     return new Judey(Selecter, 0, true);
+  };
+  static id = function (Selecter) {
+    return new Judey(Selecter, 1, false);
+  };
+  static cls = function (Selecter) {
+    return new Judey(Selecter, 2, false);
+  };
+  static tag = function (Selecter) {
+    return new Judey(Selecter, 3, false);
   };
   constructor(Selecter, SeachType, ans) {
     switch (SeachType) {
@@ -36,12 +45,14 @@ class Judey {
       default:
         return;
     }
-    if (SeachType > 1) this.#Length = this.#Data.length - 1;
-    if (this.#Data.length === 0) return;
+    if (ans === false) return this.#Data; //false時は取得要素を返却して終了。
+    if (SeachType > 1) {
+      this.#Length = this.#Data.length - 1;
+      if (this.#Data.length === 0) return
+    }
     if (SeachType > 1 && this.#Length === 0) {
       this.#Data = this.#Data[0];
     }
-    if (ans === false) return this.#Data; //false時は取得要素を返却して終了。
     //ID設定
     this.Id = (value) => {
       if (!this.#DataCheck(value)) return this;
@@ -55,7 +66,7 @@ class Judey {
     };
     //クラス設定
     this.Class = (value) => {
-      if (!this.#DataCheck(value)) return this;
+      if (!this.#DataCheck(value) || value==="") return this;
       if (this.#Length === 0) this.#Data.classList.add(value);
       else {
         for (let i = 0; i <= this.#Length; i++) {
@@ -86,8 +97,19 @@ class Judey {
       }
       return this;
     };
+    //スタイル設定
+    this.Style = (value) => {
+      if (!this.#DataCheck(value)) return this;
+      if (this.#Length === 0) this.#Data.style = value;
+      else {
+        for (let i = 0; i <= this.#Length; i++) {
+          this.#Data[i].style = value;
+        }
+      }
+      return this;
+    };
     //子要素挿入、対象にセレクタ移行
-    this.Child = (tag) => {
+    this.Child = (tag,id="",cls="") => {
       if (!this.#DataCheck(tag) && length !== 0) return this;
       if (this.#Parent === null) {
         this.#Parent = this.#Data;
@@ -97,7 +119,7 @@ class Judey {
       this.#Data = null;
       this.#ChildCount += 1;
       this.#Data = elem;
-      return this;
+      return this.Id(id).Class(cls);
     };
     //連続した子要素挿入、セレクタ移行は行わない。
     this.ChildCreate = (tag, id, cls, text, childcont) => {
@@ -127,14 +149,9 @@ class Judey {
       return this;
     };
     //参照セレクタの階層をひとつ戻す。単一要素以外では機能しない。
-    this.Breaker = () => {
-      if (this.#ChildCount === -1) {
-        this.#Data = this.#Parent;
-        this.#ChildCount = 0;
-        return this;
-      }
-      if (this.#ChildCount === 0 || this.#Length !== 0) return this;
-      if (this.#ChildCount === 1 || this.#ChildCount === -1) {
+    this.Breaker = (RetPatent=false) => {
+      if (this.#Length !== 0) return this;
+      if (this.#ChildCount < 2 || RetPatent) {
         this.#Data = this.#Parent;
         this.#ChildCount = 0;
       } else {
