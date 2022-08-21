@@ -55,7 +55,7 @@ class Judey {
     }
     //ID設定
     this.Id = (value) => {
-      if (!this.#DataCheck(value)) return this;
+      if (!this.#DataCheck(value) || value==="") return this;
       if (this.#Length === 0) this.#Data.id = value;
       else {
         for (let i = 0; i <= this.#Length; i++) {
@@ -148,15 +148,17 @@ class Judey {
       }
       return this;
     };
-    //参照セレクタの階層をひとつ戻す。単一要素以外では機能しない。
-    this.Breaker = (RetPatent=false) => {
+    //参照セレクタの階層を指定位置の親に戻す。
+    this.Breaker = (BackCount = 1) => {
       if (this.#Length !== 0) return this;
-      if (this.#ChildCount < 2 || RetPatent) {
+      if (this.#ChildCount - BackCount < 1) {
         this.#Data = this.#Parent;
         this.#ChildCount = 0;
       } else {
-        this.#Data = this.#Data.parentElement;
-        this.#ChildCount -= 1;
+        for (let i = 0; i < BackCount; i++) {
+          this.#Data = this.#Data.parentElement;
+          this.#ChildCount -= 1;
+        }
       }
       return this;
     };
