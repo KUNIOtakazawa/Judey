@@ -115,7 +115,7 @@ class Judey {
       else
         try {
          Object.keys(ans)
-          .forEach(key => this._each(elem => elem.setAttribute(key, ans[v])));         
+          .forEach(key => this._each(elem => elem.setAttribute(key, ans[key])));         
         } catch (error) {
           console.log(error);
         }
