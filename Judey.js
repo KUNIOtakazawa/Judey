@@ -110,6 +110,7 @@ class Judey {
     };
     //属性値設定
     this.Attr = (ans, value) => {
+      if (this._Length < 0) return this;
       if ([ans, value].filter(v => typeof v === "string").length === 2)
         this._each(elem => elem.setAttribute(ans, value));
       else
@@ -269,8 +270,12 @@ class Judey {
       return this;
     };
     //自要素削除
-    this.Rem = () => this._each(elem => elem.remove());
-
+    this.Rem = () => {
+      if (this._Length < 0) return this;
+      if (this._Length === 0) this._each(elem => elem.remove());
+      while (this._Data.length > 0)
+        this._Data[0].remove();
+    };
     //指定クラス削除
     this.RemClass = (value) => {
       if (!this._DataCheck(value)) return this;
