@@ -133,8 +133,11 @@ class Judey {
     //セレクタ移行は行わない。
     this.Append = (Element, PosisionName) => {
       if (Element == false || this._Length !== 0) return this;
-      Element.localName ? this._Data.insertAdjacentElement(PosisionName, Element)
-        : this._Data.insertAdjacentHTML(PosisionName, Element);
+      Element?.constructor?.name === "Judey"
+        ? this._Data.insertAdjacentElement(PosisionName, Element.Elem())
+        : Element.localName
+          ? this._Data.insertAdjacentElement(PosisionName, Element)
+          : this._Data.insertAdjacentHTML(PosisionName, Element);
       return this;
     }
     //子要素挿入、対象にセレクタ移行
