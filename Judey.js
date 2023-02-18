@@ -81,42 +81,43 @@ class Judey {
     if (ans === false) return this._Data; 
     
     /**要素に対して繰り返し処理を行う。 */
-    this._each = (func) => {
+    this.EachElem = (func) => {
       if (this._Length === 0) {
         func(this._Data, 0);
         return;
       } 
-      for (let i = 0; i <= this._Length; i++) 
+      for (let i = 0; i <= this._Length; i++)
         func(this._Data[i], i);
+      return;
     }
     //ID設定
     this.Id = (value) => {
       if (!this._DataCheck(value) || value === "") return this;
-      this._each((elem,i) => elem.id = i === 0 ? value : value + (i + 1));
+      this.EachElem((elem,i) => elem.id = i === 0 ? value : value + (i + 1));
       return this;
     };
     //クラス設定
     this.Class = (value) => {
       if (!this._DataCheck(value) || value === "") return this;
       const ans = value.split(",");
-      this._each(elem => ans.forEach(v => elem.classList.add(v)));
+      this.EachElem(elem => ans.forEach(v => elem.classList.add(v)));
       return this;
     };
     //クラス設定(toggle)
     this.Toggle = (value) => {
       if (!this._DataCheck(value)) return this;
-      this._each(elem => elem.classList.toggle(value));
+      this.EachElem(elem => elem.classList.toggle(value));
       return this;
     };
     //属性値設定
     this.Attr = (ans, value) => {
       if (this._Length < 0) return this;
       if ([ans, value].filter(v => typeof v === "string").length === 2)
-        this._each(elem => elem.setAttribute(ans, value));
+        this.EachElem(elem => elem.setAttribute(ans, value));
       else
         try {
          Object.keys(ans)
-          .forEach(key => this._each(elem => elem.setAttribute(key, ans[key])));         
+          .forEach(key => this.EachElem(elem => elem.setAttribute(key, ans[key])));         
         } catch (error) {
           console.log(error);
         }
@@ -125,7 +126,7 @@ class Judey {
     //スタイル設定
     this.Style = (value) => {
       if (!this._DataCheck(value)) return this;
-      this._each(elem => elem.style = value);
+      this.EachElem(elem => elem.style = value);
       return this;
     };
     //対象セレクタ直下に要素挿入
@@ -203,7 +204,7 @@ class Judey {
     //InnerText
     this.Text = (value) => {
       if (!this._DataCheck(value)) return this;
-      this._each((elem, i) => {
+      this.EachElem((elem, i) => {
         if (elem.innerText !== (typeof value === "object" ? value[i] : value))
           elem.innerText = typeof value === "object" ? value[i] : value;
       })
@@ -212,14 +213,9 @@ class Judey {
     //設定したプロパティ値を取得
     this.RetText = (PropartyName) => {
       if (!this._DataCheck(PropartyName)) return null;
-      if (this._Length === 0) return this._Data[PropartyName];
-      else {
-        let e = new Array();
-        for (let i = 0; i <= this._Length; i++) {
-          e.push(this._Data[i][PropartyName]);
-        }
-        return e.length !== 0 ? e : null;
-      }
+      let e = [];
+      this.EachElem(elem => e.push(elem[PropartyName]));
+      return e.length === 1 ? e[0] : e.length > 1 ? e : null;
     };
     //InnerHTML
     this.Html = (value) => {
@@ -231,7 +227,7 @@ class Judey {
     this.Event = (e, act) => {
       if (!this._DataCheck(e) || typeof act !== "function") return this;
       const ans = e.split(",");
-      this._each(elem =>
+      this.EachElem(elem =>
         ans.forEach(Event => elem.addEventListener(Event, act, false)));
       return this;
     };
@@ -239,8 +235,13 @@ class Judey {
     this.OnceEvent = (e, act) => {
       if (!this._DataCheck(e) || typeof act !== "function") return this;
       const ans = e.split(",");
-      this._each(elem =>
+      this.EachElem(elem =>
         ans.forEach(Event => elem.addEventListener(Event, act, { once: true })));
+      return this;
+    };
+    this.Dispatch = (EventName) => {
+      if (!this._DataCheck(EventName)) return this;
+      this.EachElem(elem => elem.dispatchEvent(new Event(EventName)));
       return this;
     };
     //フリック的なイベント
@@ -251,20 +252,14 @@ class Judey {
         this.FlickBase(GoMethod, Scroll_X, Scroll_Y, Lifetime, IsCompleteRem, "Move");
     this.FlickBase = (GoMethod, X, Y, Lifetime, IsCompleteRem, Mode) => {
       if (typeof GoMethod !== "function") return this;
-      if (this._Length === 0) this._Touch(this, GoMethod, X, Y, Lifetime, IsCompleteRem, Mode);
-      else {
-        for (let i = 0; i <= this._Length; i++) {
-          const elem = Judey.$elem(this._Data[i]);
-          this._Touch(elem, GoMethod, X, Y, Lifetime, IsCompleteRem, Mode);
-        }
-      }
+      this.EachElem(elem => this._Touch(Judey.$elem(elem), GoMethod, X, Y, Lifetime, IsCompleteRem, Mode));
       return this;
     }
     //イベント削除
     this.RemEvent = (e, act) => {
       if (!this._DataCheck(e) || typeof act !== "function") return this;
       const ans = e.split(",");
-      this._each(elem => {
+      this.EachElem(elem => {
         ans.forEach(Event => {
           elem.removeEventListener(Event, act, false);
           elem.removeEventListener(Event, act, { once: true });
@@ -275,7 +270,7 @@ class Judey {
     //自要素削除
     this.Rem = () => {
       if (this._Length < 0) return this;
-      if (this._Length === 0) this._each(elem => elem.remove());
+      if (this._Length === 0) this.EachElem(elem => elem.remove());
       while (this._Data.length > 0)
         this._Data[0].remove();
     };
@@ -283,14 +278,14 @@ class Judey {
     this.RemClass = (value) => {
       if (!this._DataCheck(value)) return this;
       const ans = value.split(",");
-      this._each(elem => ans.forEach(v => elem.classList.remove(v)));
+      this.EachElem(elem => ans.forEach(v => elem.classList.remove(v)));
       return this;
     };
     //属性値削除
     this.RemAttr = (key) => {
       if (!this._DataCheck(key)) return this;
       const ans = key.split(",");
-      this._each(elem => ans.forEach(v => elem.removeAttribute(v)));
+      this.EachElem(elem => ans.forEach(v => elem.removeAttribute(v)));
       return this;
     };
     //格納エレメント返却
@@ -299,7 +294,7 @@ class Judey {
     //子要素の一致するクラスをセレクタに設定する。
     this.Search = (value) => {
       if (!this._DataCheck(value) && this._Length === 0) return this;
-      let ary = new Array();
+      let ary = [];
       const parent = this._Data.children;
       for (let i = 0; i < parent.length; i++) 
         if (parent[i].classList.contains(value)) ary.push(cld);
@@ -323,26 +318,19 @@ class Judey {
     //InputのValue値を取得または設定
     this.InpText = (value = null) => {
       if (this._Length < 0) return this;
-      if (this._Length === 0) {
-        value === null
-          ? (value = this._Data.value)
-          : typeof value !== "object"
-          ? (this._Data.value = value)
-          : (this._Data.value = value[0]);
-      } else {
-        let ary = new Array();
-        for (let i = 0; i <= this._Length; i++) {
-          value === null
-            ? ary.push(this._Data[i].value)
-            : (this._Data[i].value =
-                typeof value !== "object" ? value : value[i]);
+      let ary = [];
+      this.EachElem((elem, i) => {
+        if (value === null) ary.push(elem.value)
+        else {
+          if (typeof value !== "object") elem.value = value
+          else elem.value = value[i];
         }
-        return value === null ? ary : this;
-      }
+      })
+      return value !== null ? this : ary.length === 1 ? ary[0] : ary;
     };
-
     return this;
   }
+
   //値が適性かチェック
   _DataCheck = (value) => {
     return typeof value === "string" && this._Length >= 0 ? true : false;
