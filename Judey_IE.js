@@ -1,5 +1,6 @@
 "use strict";
 
+/**DOM操作を補助する。 */
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread(); }
 function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
@@ -15,7 +16,7 @@ function _toPropertyKey(arg) { var key = _toPrimitive(arg, "string"); return _ty
 function _toPrimitive(input, hint) { if (_typeof(input) !== "object" || input === null) return input; var prim = input[Symbol.toPrimitive]; if (prim !== undefined) { var res = prim.call(input, hint || "default"); if (_typeof(res) !== "object") return res; throw new TypeError("@@toPrimitive must return a primitive value."); } return (hint === "string" ? String : Number)(input); }
 var Judey = /*#__PURE__*/_createClass( /**対象要素 */
 
-function Judey(Selecter, SeachType, ans) {
+  function Judey(Selecter, SeachType, ans) {
   var _this = this;
   _classCallCheck(this, Judey);
   _defineProperty(this, "_Data", null);
@@ -152,7 +153,7 @@ function Judey(Selecter, SeachType, ans) {
   if (ans === false) return this._Data;
 
   /**要素に対して繰り返し処理を行う。 */
-  this._each = function (func) {
+  this.EachElem = function (func) {
     if (_this._Length === 0) {
       func(_this._Data, 0);
       return;
@@ -163,7 +164,7 @@ function Judey(Selecter, SeachType, ans) {
   //ID設定
   this.Id = function (value) {
     if (!_this._DataCheck(value) || value === "") return _this;
-    _this._each(function (elem, i) {
+    _this.EachElem(function (elem, i) {
       return elem.id = i === 0 ? value : value + (i + 1);
     });
     return _this;
@@ -172,7 +173,7 @@ function Judey(Selecter, SeachType, ans) {
   this.Class = function (value) {
     if (!_this._DataCheck(value) || value === "") return _this;
     var ans = value.split(",");
-    _this._each(function (elem) {
+    _this.EachElem(function (elem) {
       return ans.forEach(function (v) {
         return elem.classList.add(v);
       });
@@ -182,7 +183,7 @@ function Judey(Selecter, SeachType, ans) {
   //クラス設定(toggle)
   this.Toggle = function (value) {
     if (!_this._DataCheck(value)) return _this;
-    _this._each(function (elem) {
+    _this.EachElem(function (elem) {
       return elem.classList.toggle(value);
     });
     return _this;
@@ -192,11 +193,11 @@ function Judey(Selecter, SeachType, ans) {
     if (_this._Length < 0) return _this;
     if ([ans, value].filter(function (v) {
       return typeof v === "string";
-    }).length === 2) _this._each(function (elem) {
+    }).length === 2) _this.EachElem(function (elem) {
       return elem.setAttribute(ans, value);
     });else try {
       Object.keys(ans).forEach(function (key) {
-        return _this._each(function (elem) {
+        return _this.EachElem(function (elem) {
           return elem.setAttribute(key, ans[key]);
         });
       });
@@ -208,7 +209,7 @@ function Judey(Selecter, SeachType, ans) {
   //スタイル設定
   this.Style = function (value) {
     if (!_this._DataCheck(value)) return _this;
-    _this._each(function (elem) {
+    _this.EachElem(function (elem) {
       return elem.style = value;
     });
     return _this;
@@ -288,7 +289,7 @@ function Judey(Selecter, SeachType, ans) {
   //InnerText
   this.Text = function (value) {
     if (!_this._DataCheck(value)) return _this;
-    _this._each(function (elem, i) {
+    _this.EachElem(function (elem, i) {
       if (elem.innerText !== (_typeof(value) === "object" ? value[i] : value)) elem.innerText = _typeof(value) === "object" ? value[i] : value;
     });
     return _this;
@@ -297,7 +298,7 @@ function Judey(Selecter, SeachType, ans) {
   this.RetText = function (PropartyName) {
     if (!_this._DataCheck(PropartyName)) return null;
     var e = [];
-    _this._each(function (elem) {
+    _this.EachElem(function (elem) {
       return e.push(elem[PropartyName]);
     });
     return e.length === 1 ? e[0] : e.length > 1 ? e : null;
@@ -312,7 +313,7 @@ function Judey(Selecter, SeachType, ans) {
   this.Event = function (e, act) {
     if (!_this._DataCheck(e) || typeof act !== "function") return _this;
     var ans = e.split(",");
-    _this._each(function (elem) {
+    _this.EachElem(function (elem) {
       return ans.forEach(function (Event) {
         return elem.addEventListener(Event, act, false);
       });
@@ -323,7 +324,7 @@ function Judey(Selecter, SeachType, ans) {
   this.OnceEvent = function (e, act) {
     if (!_this._DataCheck(e) || typeof act !== "function") return _this;
     var ans = e.split(",");
-    _this._each(function (elem) {
+    _this.EachElem(function (elem) {
       return ans.forEach(function (Event) {
         return elem.addEventListener(Event, act, {
           once: true
@@ -334,7 +335,7 @@ function Judey(Selecter, SeachType, ans) {
   };
   this.Dispatch = function (EventName) {
     if (!_this._DataCheck(EventName)) return _this;
-    _this._each(function (elem) {
+    _this.EachElem(function (elem) {
       return elem.dispatchEvent(new Event(EventName));
     });
     return _this;
@@ -357,7 +358,7 @@ function Judey(Selecter, SeachType, ans) {
   };
   this.FlickBase = function (GoMethod, X, Y, Lifetime, IsCompleteRem, Mode) {
     if (typeof GoMethod !== "function") return _this;
-    _this._each(function (elem) {
+    _this.EachElem(function (elem) {
       return _this._Touch(Judey.$elem(elem), GoMethod, X, Y, Lifetime, IsCompleteRem, Mode);
     });
     return _this;
@@ -366,7 +367,7 @@ function Judey(Selecter, SeachType, ans) {
   this.RemEvent = function (e, act) {
     if (!_this._DataCheck(e) || typeof act !== "function") return _this;
     var ans = e.split(",");
-    _this._each(function (elem) {
+    _this.EachElem(function (elem) {
       ans.forEach(function (Event) {
         elem.removeEventListener(Event, act, false);
         elem.removeEventListener(Event, act, {
@@ -379,7 +380,7 @@ function Judey(Selecter, SeachType, ans) {
   //自要素削除
   this.Rem = function () {
     if (_this._Length < 0) return _this;
-    if (_this._Length === 0) _this._each(function (elem) {
+    if (_this._Length === 0) _this.EachElem(function (elem) {
       return elem.remove();
     });
     while (_this._Data.length > 0) _this._Data[0].remove();
@@ -388,7 +389,7 @@ function Judey(Selecter, SeachType, ans) {
   this.RemClass = function (value) {
     if (!_this._DataCheck(value)) return _this;
     var ans = value.split(",");
-    _this._each(function (elem) {
+    _this.EachElem(function (elem) {
       return ans.forEach(function (v) {
         return elem.classList.remove(v);
       });
@@ -399,7 +400,7 @@ function Judey(Selecter, SeachType, ans) {
   this.RemAttr = function (key) {
     if (!_this._DataCheck(key)) return _this;
     var ans = key.split(",");
-    _this._each(function (elem) {
+    _this.EachElem(function (elem) {
       return ans.forEach(function (v) {
         return elem.removeAttribute(v);
       });
@@ -438,7 +439,7 @@ function Judey(Selecter, SeachType, ans) {
     var value = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
     if (_this._Length < 0) return _this;
     var ary = [];
-    _this._each(function (elem, i) {
+    _this.EachElem(function (elem, i) {
       if (value === null) ary.push(elem.value);else {
         if (_typeof(value) !== "object") elem.value = value;else elem.value = value[i];
       }
@@ -447,6 +448,7 @@ function Judey(Selecter, SeachType, ans) {
   };
   return this;
 }
+
 //値が適性かチェック
 );
 _defineProperty(Judey, "$id", function (Selecter) {
