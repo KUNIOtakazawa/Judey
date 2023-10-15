@@ -500,3 +500,4 @@ class Judey {
     }
   }
 }
+const $ = (Func) => document.addEventListener("DOMContentLoaded", Func, false);
