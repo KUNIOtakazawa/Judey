@@ -9,103 +9,156 @@ class Judey {
   _ChildCount = 0;
   
   /**id検索で一致した要素をJudeyに取り込む */
-  static $id = function (Selecter) {
-    return new Judey(Selecter, 1, true);
-  };
+  static $id = (Selector) => new Judey(Selector, 1, true);
   /**クラス検索で一致した要素をJudey要素に取り込む */
-  static $cls = function (Selecter) {
-    return new Judey(Selecter, 2, true);
-  };
+  static $cls = (Selector) => new Judey(Selector, 2, true);
   /**タグ検索で一致した要素をJudey要素に取り込む */
-  static $tag = function (Selecter) {
-    return new Judey(Selecter, 3, true);
-  };
+  static $tag = (Selector) => new Judey(Selector, 3, true);
   /**クエリ検索で一致した要素をJudey要素に取り込む */
-  static $query = function(Selecter) {
-    return new Judey(Selecter, 4, true);
-  };
+  static $query = (Selector) => new Judey(Selector, 4, true);
   /**入力要素をJudey要素に取り込む */
-  static $elem = function (Selecter) {
-    return new Judey(Selecter, 0, true);
-  };
+  static $elem = (Selector) => new Judey(Selector, 0, true);
   /**Judey構文　getElementById */
-  static id = function (Selecter) {
-    return new Judey(Selecter, 1, false);
-  };
+  static id = (Selector) => new Judey(Selector, 1, false);
   /**Judey構文　getElementsByClassName */
-  static cls = function (Selecter) {
-    return new Judey(Selecter, 2, false);
-  };
+  static cls = (Selector) => new Judey(Selector, 2, false);
   /**Judey構文　getElementsByTagName */
-  static tag = function (Selecter) {
-    return new Judey(Selecter, 3, false);
-  };
+  static tag = (Selector) => new Judey(Selector, 3, false);
   /**Judey構文　querySelectorAll */
-  static query = function(Selecter) {
-    return new Judey(Selecter, 4, false);
+  static query = (Selector) => new Judey(Selector, 4, false);
+  //生成要素をJudeyParentとして扱う
+  static $Element = (Tag, Id = "", Class = "") => {
+    const elem = document.createElement(Tag);
+    const func = this.$elem(elem);
+    return func.Id(Id).Class(Class);
   };
-  constructor(Selecter, SeachType, ans) {
-    switch (SeachType) {
-      case 1:
-        this._Data = document.getElementById(Selecter);
-        this._Length = !this._Data ? -1 : 0;
-        break;
-      case 2:
-        this._Data = document.getElementsByClassName(Selecter);
-        break;
-      case 3:
-        this._Data = document.getElementsByTagName(Selecter);
-        break;
-      case 4:
-        this._Data = document.querySelectorAll(Selecter);
-        break;
-      case 0:
-        this._Data = Selecter;
-        if (Selecter.tagName !== undefined) {
-          this._Length = 0;
+  //要素生成
+  static Element = (Tag, Id = "", Class = "") => Judey.$Element(Tag, Id, Class).Elem();
+
+  constructor(Selector, SearchType, ans) {
+    const SetElement = (Target, ElemSelector, SearchTypeNum, IsReturnElem) => {
+      try {
+        let Length = 0;
+        const Elem = (() => {
+          switch (SearchTypeNum) {
+            case 1: return Target.getElementById(ElemSelector);
+            case 2: return Target.getElementsByClassName(ElemSelector);
+            case 3: return Target.getElementsByTagName(ElemSelector);
+            case 4: return Target.querySelectorAll(ElemSelector);
+            case 0:
+              if (ElemSelector?.tagName !== undefined) {
+                Length = 0;
+              } else {
+                SearchTypeNum = 2;
+              }
+              return Selector;
+          }
+        })();
+
+        if (SearchTypeNum < 2) {
+          Length = Elem ? 0 : -1;
         } else {
-          SeachType = 2;
-        }  
-        break;
-      default:
-        return;
+          Length = Elem.length - 1;
+        }
+
+        if (IsReturnElem) {
+          if (SearchTypeNum > 1 && Length === 0) return Elem[0];
+          return Length > 0 ? Elem : null;
+        }
+                
+        this._Data = (SearchTypeNum > 1 && Length === 0)
+          ? Elem[0]
+          : Elem;
+
+        this._Length = Length;
+
+        return this;
+      } catch (e) {
+
+        console.error(e);
+
+        if (IsReturnElem) return null;
+
+        this._Data = null;
+        this._Length = -1;
+        return this;
+      }      
+    } 
+    
+    const SetChildElement = (Selector, SearchTypeNum, ReturnElem) => {
+      if (!DataCheck(Selector) || this._Length !== 0) return this;
+      return SetElement(this._Data, Selector, SearchTypeNum,ReturnElem);   
     }
-    if (SeachType > 1)
-      this._Length = this._Data.length - 1;
+
+    /** valueが文字列型であるとこ、要素が1つ以上あること */
+    const DataCheck  = (value) => {
+      return typeof value === "string" && this._Length >= 0 ? true : false;
+    };
     
-    //取得要素が1つの場合は単一扱い
-    if (SeachType > 1 && this._Length === 0) 
-      this._Data = this._Data[0];
+    const ListnerOption = (EventName, Once = false, Capture = false) => {
+      const IsTouch = EventName.includes("touch");
+      const Result = {};
+      if (Once) Result.once = true;
+      if (IsTouch) Result.passive = true;
+      if (Capture) Result.capture = true;
+      return Result;
+    };
     
+    const EventBase = (EventName, Act, Option) => {
+      if (!DataCheck(EventName) || typeof Act !== "function") return this;
+      const ans = EventName.split(",");
+      this.EachElem(elem =>
+        ans.forEach(Event => elem.addEventListener(Event, Act, Option)));
+      return this;
+    }
+
+    SetElement(document, Selector, SearchType, false);
+
     //false時は取得要素を返却して終了。
-    if (ans === false) return this._Data; 
+    if (ans === false) return this._Data;  
     
+    this.$id = (Selector, ReturnElem = false) => SetChildElement(Selector, 1, ReturnElem);
+    this.$cls = (Selector, ReturnElem = false) => SetChildElement(Selector, 2, ReturnElem);
+    this.$tag = (Selector, ReturnElem = false) => SetChildElement(Selector, 3, ReturnElem);
+    this.$query = (Selector, ReturnElem = false) => SetChildElement(Selector, 4, ReturnElem);
+    this.$Nid = (Selector) => Judey.$elem(this.$id(Selector, true));
+    this.$Ncls = (Selector) => Judey.$elem(this.$cls(Selector, true));
+    this.$Ntag = (Selector) => Judey.$elem(this.$tag(Selector, true));
+    this.$Nquery = (Selector) => Judey.$elem(this.$query(Selector, true));
+
+    this.$Parent = (Selector, ReturnElem = false) => {
+      if (!DataCheck(Selector) || this._Length !== 0) return this;
+      return SetElement(null, this._Data.closest(Selector), 0, ReturnElem);
+    }
+    this.$NewParent = (Selector) => Judey.$elem(this.$Parent(Selector));
+
     /**要素に対して繰り返し処理を行う。 */
     this.EachElem = (func) => {
       if (this._Length === 0) {
         func(this._Data, 0);
-        return;
+        return true;
       } 
-      for (let i = 0; i <= this._Length; i++)
-        func(this._Data[i], i);
-      return;
+      for (let i = 0; i <= this._Length; i++){
+        if (func(this._Data[i], i) === "Exit") return false;
+      }
+      return true;
     }
     //ID設定
     this.Id = (value) => {
-      if (!this._DataCheck(value) || value === "") return this;
+      if (!DataCheck(value) || value === "") return this;
       this.EachElem((elem,i) => elem.id = i === 0 ? value : value + (i + 1));
       return this;
     };
     //クラス設定
     this.Class = (value) => {
-      if (!this._DataCheck(value) || value === "") return this;
+      if (!DataCheck(value) || value === "") return this;
       const ans = value.split(",");
       this.EachElem(elem => ans.forEach(v => elem.classList.add(v)));
       return this;
     };
     //クラス設定(toggle)
     this.Toggle = (value) => {
-      if (!this._DataCheck(value)) return this;
+      if (!DataCheck(value)) return this;
       this.EachElem(elem => elem.classList.toggle(value));
       return this;
     };
@@ -119,13 +172,13 @@ class Judey {
          Object.keys(ans)
           .forEach(key => this.EachElem(elem => elem.setAttribute(key, ans[key])));         
         } catch (error) {
-          console.log(error);
+          console.error(error);
         }
       return this;
     };
     //スタイル設定
     this.Style = (value) => {
-      if (!this._DataCheck(value)) return this;
+      if (!DataCheck(value)) return this;
       this.EachElem(elem => elem.style = value);
       return this;
     };
@@ -134,16 +187,45 @@ class Judey {
     //セレクタ移行は行わない。
     this.Append = (Element, PosisionName) => {
       if (Element == false || this._Length !== 0) return this;
-      Element?.constructor?.name === "Judey"
-        ? this._Data.insertAdjacentElement(PosisionName, Element.Elem())
-        : Element.localName
+
+      const SetArrayElem = (element) => {
+        if (element?.constructor?.name === "HTMLCollection") {
+          const TotalLen = element.length;
+          for (let i = 0; i < TotalLen; i++)
+            this._Data.insertAdjacentElement(PosisionName, element[0]);
+        }
+        if (element?.constructor?.name === "NodeList") {
+          for (let i = 0; i <  element.length; i++)
+            this._Data.insertAdjacentElement(PosisionName, element[i]);
+        }
+      }
+      if (Element?.constructor?.name === "Judey") {
+        if (Element._Length === 0) {
+          this._Data.insertAdjacentElement(PosisionName, Element.Elem());
+        }
+        if (Element._Length > 0) {
+          const Elem = Element.Elem();
+          SetArrayElem(Elem);
+        }
+        return this;
+      }
+      if (["HTMLCollection", "NodeList"].includes(Element?.constructor?.name)) {
+        SetArrayElem(Element);
+      } else {
+        Element.localName
           ? this._Data.insertAdjacentElement(PosisionName, Element)
-          : this._Data.insertAdjacentHTML(PosisionName, Element);
+          : this._Data.insertAdjacentHTML(PosisionName, Element);        
+      }
       return this;
     }
+    this.AppendLast = (Element) => this.Append(Element, Judey.InsertLast);
+    this.AppendFirst = (Element) => this.Append(Element, Judey.InsertFirst);
+    this.AppendBefore = (Element) => this.Append(Element, Judey.Before);
+    this.AppendAfter = (Element) => this.Append(Element, Judey.After);
+
     //子要素挿入、対象にセレクタ移行
     this.Child = (tag , id = "", cls = "") => {
-      if (!this._DataCheck(tag) && this._Length !== 0) return this;
+      if (!DataCheck(tag) && this._Length !== 0) return this;
       if (this._Parent === null) this._Parent = this._Data;
       
       const elem = document.createElement(tag);
@@ -152,40 +234,6 @@ class Judey {
       this._ChildCount += 1;
       this._Data = elem;
       return this.Id(id).Class(cls);
-    };
-    //参照セレクタを対象子要素全てに設定する。
-    this.$Children = () => {
-      if (this._Length === 0) {
-        this._Data = this._Data.children;
-      } else {
-        let Collection = [];
-        for (let i = 0; i <= this._Length; i++) 
-          Collection.push(...this._Data[i].children);
-        this._Data = Collection;
-      }
-      this._Length = this._Data.length - 1;
-      this._Parent = null;
-      this._ChildCount = 0;
-      return this;
-    }
-    //連続した子要素挿入、セレクタ移行は行わない。
-    this.ChildCreate = (tag, id, cls, text, childcount) => {
-      if (!this._DataCheck(tag) && this._Length !== 0) return this;
-      if (this._Parent === null) {
-        this._Parent = this._Data;
-      }
-      for (let i = 0; i < childcount; i++) {
-        const elem = document.createElement(tag);
-        elem.id = typeof id !== "object" ? id + (i + Number(1)) : id[i];
-        elem.classList.add(typeof cls !== "object" ? cls : cls[i]);
-        if (["div", "span", "li", "td", "th", "label", "p"].find(v => v === tag)) {
-          elem.innerText = typeof text !== "object" ? text : text[i];
-        } else {
-          elem.value = typeof text !== "object" ? text : text[i];
-        }
-        this._Data.appendChild(elem);
-      }
-      return this;
     };
     //参照セレクタの階層を指定位置の親に戻す。
     this.Breaker = (BackCount = 1) => {
@@ -203,44 +251,63 @@ class Judey {
     };
     //InnerText
     this.Text = (value) => {
-      if (!this._DataCheck(value)) return this;
-      this.EachElem((elem, i) => {
-        if (elem.innerText !== (typeof value === "object" ? value[i] : value))
-          elem.innerText = typeof value === "object" ? value[i] : value;
-      })
+      if (value !== "") {
+        this.EachElem((elem, i) => {
+          if (elem.innerText !== (typeof value === "object" ? value[i] : value))
+            elem.innerText = typeof value === "object" ? value[i] : value;
+        })
+      } else {
+        if (this._Length > 0) {
+          const Result = [];
+          this.EachElem(elem => Result.push(elem.innerText));
+          return Result;
+        } else {
+          return this._Data.innerText;
+        }
+      }
       return this;
     };
     //設定したプロパティ値を取得
     this.RetText = (PropartyName) => {
-      if (!this._DataCheck(PropartyName)) return null;
+      if (!DataCheck(PropartyName)) return null;
       let e = [];
       this.EachElem(elem => e.push(elem[PropartyName]));
       return e.length === 1 ? e[0] : e.length > 1 ? e : null;
     };
     //InnerHTML
     this.Html = (value) => {
-      if (!this._DataCheck(value)) return this;
+      if (!DataCheck(value)) return this;
       if (this._Length === 0) this._Data.innerHTML = value;
       return this;
     };
-    //イベント生成
-    this.Event = (e, act) => {
-      if (!this._DataCheck(e) || typeof act !== "function") return this;
-      const ans = e.split(",");
-      this.EachElem(elem =>
-        ans.forEach(Event => elem.addEventListener(Event, act, false)));
-      return this;
+    /**フォーカスを設定する。 */
+    this.Forcus = () => {
+      try {
+        if (this._Length !== 0) return this;
+        this._Data.forcus();
+        return this;
+      } catch (error) {
+        return this;
+      }
+    };
+    /**フォーカスを取り除く */
+    this.Blur = () => {
+      try {
+        if (this._Length !== 0) return this;
+        this._Data.blur();
+        return this;
+      } catch (error) {
+        return this;
+      }
     };
     //イベント生成
-    this.OnceEvent = (e, act) => {
-      if (!this._DataCheck(e) || typeof act !== "function") return this;
-      const ans = e.split(",");
-      this.EachElem(elem =>
-        ans.forEach(Event => elem.addEventListener(Event, act, { once: true })));
-      return this;
-    };
+    this.Event = (e, act) => EventBase(e, act, ListnerOption(e, false, false));
+    this.OnceEvent = (e, act) => EventBase(e, act, ListnerOption(e, true, false));
+    this.CaptureEvent = (e, act) => EventBase(e, act, ListnerOption(e, false, true));
+    this.OnceCaptureEvent = (e, act) => EventBase(e, act, ListnerOption(e, true, true));
+
     this.Dispatch = (EventName) => {
-      if (!this._DataCheck(EventName)) return this;
+      if (!DataCheck(EventName)) return this;
       this.EachElem(elem => elem.dispatchEvent(new Event(EventName)));
       return this;
     };
@@ -257,12 +324,12 @@ class Judey {
     }
     //イベント削除
     this.RemEvent = (e, act) => {
-      if (!this._DataCheck(e) || typeof act !== "function") return this;
+      if (!DataCheck(e) || typeof act !== "function") return this;
       const ans = e.split(",");
       this.EachElem(elem => {
         ans.forEach(Event => {
           elem.removeEventListener(Event, act, false);
-          elem.removeEventListener(Event, act, { once: true });
+          elem.removeEventListener(Event, act, { capture: true });
         });
       })
       return this;
@@ -271,48 +338,33 @@ class Judey {
     this.Rem = () => {
       if (this._Length < 0) return this;
       if (this._Length === 0) this.EachElem(elem => elem.remove());
-      while (this._Data.length > 0)
-        this._Data[0].remove();
+      if (this._Data?.constructor?.name === "NodeList") 
+        for (let i = 0; i <= this._Length; i++) this._Data[i].remove();
+      else
+        while (this._Data.length > 0) this._Data[0].remove();
     };
     //指定クラス削除
     this.RemClass = (value) => {
-      if (!this._DataCheck(value)) return this;
+      if (!DataCheck(value)) return this;
       const ans = value.split(",");
       this.EachElem(elem => ans.forEach(v => elem.classList.remove(v)));
       return this;
     };
     //属性値削除
     this.RemAttr = (key) => {
-      if (!this._DataCheck(key)) return this;
+      if (!DataCheck(key)) return this;
       const ans = key.split(",");
       this.EachElem(elem => ans.forEach(v => elem.removeAttribute(v)));
       return this;
     };
     //格納エレメント返却
     this.Elem = () => this._Data;
+    //length
+    this.Len = () => this._Length;
 
-    //子要素の一致するクラスをセレクタに設定する。
-    this.Search = (value) => {
-      if (!this._DataCheck(value) && this._Length === 0) return this;
-      let ary = [];
-      const parent = this._Data.children;
-      for (let i = 0; i < parent.length; i++) 
-        if (parent[i].classList.contains(value)) ary.push(cld);
-      
-      if (ary.length === 1) {
-        this._Data = ary[0];
-        this._Length = 0;
-        this._ChildCount = -1;
-      } else {
-        this._Data = ary;
-        this._Length = ary.length - 1;
-      }
-      return this;
-    };
-    //子要素を全て削除する、セレクターが単一要素時のみ。
+    //子要素を全て削除する
     this.RemChild = () => {
-      if (this._Length !== 0) return this;
-      this.Html("");
+      this.EachElem(elem => elem.innerHTML = "");
       return this;
     };
     //InputのValue値を取得または設定
@@ -330,21 +382,6 @@ class Judey {
     };
     return this;
   }
-
-  //値が適性かチェック
-  _DataCheck = (value) => {
-    return typeof value === "string" && this._Length >= 0 ? true : false;
-  };
-  //生成要素をJudeyParentとして扱う
-  static $Element = (Tag, Id = "", Class = "") => {
-    const elem = document.createElement(Tag);
-    const func = this.$elem(elem);
-    return func.Id(Id).Class(Class);
-  };
-  //要素生成
-  static Element = (Tag, Id = "", Class = "") => {
-    return Judey.$Element(Tag, Id, Class).Elem();
-  };
   /**指定：要素の直前に挿入 */
   static Before = "beforeBegin";
   /**指定：要素内の一番最初に挿入 */
@@ -371,7 +408,6 @@ class Judey {
 
       //初期位置設定
       $Target.OnceEvent("touchmove", (e) => {
-        e.preventDefault();
         Move_X = Math.trunc(e.targetTouches[0].screenX);
         Move_Y = Math.trunc(e.targetTouches[0].screenY);
       })
