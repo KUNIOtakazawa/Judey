@@ -1,0 +1,277 @@
+/**
+ * XMLHttpRequestラッパー
+ * 非同期処理
+ * 第二引数はハンドラー
+ * */
+function IEFetch(URL, Handler = "", Query = "") {
+
+    this._URL = IEFetch.OriginURL + URL; //リクエストURL
+    this.Request = new XMLHttpRequest(); //XMLHttpRequestオブジェクト
+    this.Timeout = 10e3; //タイムアウト時間(ミリ秒指定)
+    this.GetContentType = IEFetch.Type_Json; //Dataに入れる形式を指定する。
+    this.IsComplete = null; //リクエスト成功判定
+    this.HttpCode = null;
+    this.Data = null; //レスポンスデータ
+    this.ContentMimeType = IEFetch.Request_Json; //RequestMimeType
+    this.Headers = new Array();
+
+    /** 動作完了時に動かす関数 */
+    this.Func = null;
+    /** エラー時に動かす関数 */
+    this.ErrFunc = null;
+    this._AfterFunc = new Array();
+    this._ErrAfterFunc = new Array();
+    this._FinallyFunc = null;
+    this.ErrResult = null;
+
+    if (Handler !== "") this._URL += `?handler=${Handler}`;
+    if (Query !== "") this._URL += `&${Query}`;
+
+    return this;
+};
+
+
+IEFetch.prototype = {
+    _SetResponseType: function (ResponseType) {
+        if (Number(ResponseType)) {
+            this.GetContentType = ResponseType;
+        } else {
+            var Value = ResponseType.toLowerCase();
+            this.GetContentType =
+                ["html", "text"].includes(Value) ? IEFetch.Type_Text
+                    : ["json", "object"].includes(Value) ? IEFetch.Type_Json
+                        : IEFetch.Type_Binary;
+        }
+        return 1;
+    },
+    _SetRequestType: function (RequestType) {
+        var Result;
+        if ([IEFetch.Request_Form_Other, IEFetch.Request_Json, IEFetch.Request_Text].includes(RequestType)) {
+            Result = RequestType;
+        } else {
+            var Value = RequestType.toLowerCase();
+            Result =
+                ["html", "text", "form"].includes(Value) ? IEFetch.Request_Text_Form
+                    : ["json"].includes(Value) ? IEFetch.Request_Json
+                        : ["binary", "picure"].includes(Value) ? IEFetch.Request_Form_Binary_Picture
+                            : RequestType;
+        }
+        this.ContentMimeType = Result;
+    },
+    /**Get通信 */
+    Get: function Get(ResponseType) {
+        this._SetResponseType.call(this, ResponseType);
+        this.Request.open("GET", this._URL, true);
+        this.Request.timeout = this.Timeout;
+        this._Event.call(this);
+        this.Request.send();
+        return this;
+    },
+    /**Post通信 */
+    Post: function Post(SendData, RequestType, ResponseType) {
+        this.Request.open("POST", this._URL, true);
+
+        if (RequestType) this._SetRequestType.call(this, RequestType);
+        if (ResponseType) this._SetResponseType.call(this, ResponseType);
+
+        if (!SendData.constructor || SendData.constructor.name !== "FormData") {
+            this.Request.setRequestHeader("Content-Type", this.ContentMimeType);
+        }
+
+        //トークン
+        this.SetHeader("RequestVerificationToken",
+            Judey.$query("input[name='__RequestVerificationToken']").InpText()
+        );
+
+        if (this.Headers.length > 0) {
+            for (var i = 0; i < this.Headers.length; i++) {
+                this.Request.setRequestHeader(this.Headers[i][0], this.Headers[i][1]);
+            }
+        }
+        try {
+            this.Request.timeout = this.Timeout;
+            this._Event.call(this);
+            this.Request.send(SendData);
+            this.Headers = new Array();
+        } catch (e) {
+            alert("そもそも送れてない！");
+        }
+
+        return this;
+    },
+    /**リクエスト成功時の関数を設定する。
+     * この関数は入れた順番かつ、this.Funcより後に実行される。
+     * Funcの指定は関数またはArray[関数]
+     * 最新の構文ではawaitの後に実行されるもの。
+     */
+    After: function After(Func) {
+        if (typeof Func === "string") return this;
+        var Keys = Object.keys(Func);
+        if (Keys.length > 0) {
+            for (var i = 0; i < Keys.length; i++) {
+                if (Func[Keys[i]] !== "object") continue;
+                this._AfterFunc.push(Func[Keys[i]]);
+            }
+            return this;
+        }
+        this._AfterFunc.push(Func);
+        return this;
+    },
+    /**
+     * エラー時の関数を設定する。
+     * @param {any} Func
+     */
+    ErrAfter: function ErrAfter(Func) {
+        if (typeof Func === "string") return this;
+        var Keys = Object.keys(Func);
+        if (Keys.length > 0) {
+            for (var i = 0; i < Keys.length; i++) {
+                if (Func[Keys[i]] !== "object") continue;
+                this._ErrAfterFunc.push(Func[Keys[i]]);
+            }
+            return this;
+        }
+        this._ErrAfterFunc.push(Func);
+        return this;
+    },
+    Finally: function Finally(Func) {
+        if (typeof Func === "string") return this;
+        this._FinallyFunc = Func;
+        return this;
+    },
+    /**Afterの関数定義を初期化する。 */
+    ResetAfter: function ResetAfter() {
+        this._AfterFunc = new Array();
+        return this;
+    },
+
+    /**Reqestヘッダーに情報を登録する。 */
+    SetHeader: function SetHeader(Key, Value) {
+        this.Headers.push([Key, Value]);
+        return this;
+    },
+    /**
+     * イベント設定
+     * 完了、エラー、タイムアウト時の動作を設定する。
+     * Func、ErrFuncの動作設定
+     * Afterを設定している場合は個別の動作も設定する。
+     */
+    _Event: function _Event() {
+        var Me = this;
+        var Req = Me.Request;
+        var NowTime = Date.now();
+
+        var FailedFunc = function FailedFunc() {
+            SetStatus(false);
+        };
+        var TimeOut_FailedFunc = function TimeOut_FailedFunc() {
+            FailedFunc();
+            console.error("ReqestTimeout....");
+            console.error("TargetURL:" + Me._URL);
+        };
+
+        var Onload = function () {
+            switch (Me.GetContentType) {
+                case IEFetch.Type_Json:
+                    try {
+                        Me.Data = JSON.parse(Req.responseText);
+                    } catch (error) {
+                        Me.Data = "";
+                    }
+                    break;
+                case IEFetch.Type_Text:
+                    Me.Data = Req.responseText || "";
+                    break;
+                case IEFetch.Type_Binary:
+                    Me.Data = Req.responseXML;
+                    break;
+                default:
+                    Me.IsComplete = false;
+                    Me.Data = null;
+            }
+            SetStatus(true);
+        };
+        var OnError = FailedFunc;
+        var OnTimeout = TimeOut_FailedFunc;
+
+        function SetStatus(Success) {
+            Me.IsComplete = Success;
+            Me.HttpCode = Req.status;
+            Me.FuncResult = null;
+
+            var Result;
+            Me.ErrResult = null;
+
+            if (Success) {
+                for (var i = 0; i < Me._AfterFunc.length; i++) {
+                    try {
+                        Result = Me._AfterFunc[i](Me.Data, Me, Result);
+                    } catch (error) {
+                        console.error(error);
+
+                        Me.ErrResult = error;
+                        if (Me.ErrFunc) {
+                            Me.ErrFunc(Me);
+                        }
+                        for (var i = 0; i < Me._ErrAfterFunc.length; i++) {
+                            try {
+                                Result = Me._ErrAfterFunc[i](Me.Data, Me, Result);
+                            } catch (e) {
+
+                            }
+                        }
+                    }
+                }
+            } else {
+                if (Me.ErrFunc) {
+                    Me.ErrFunc(Me);
+                }
+                for (var i = 0; i < Me._ErrAfterFunc.length; i++) {
+                    try {
+                        Result = Me._ErrAfterFunc[i](Me.Data, Me, Result);
+                    } catch (e) {
+
+                    }
+                }
+            }
+            try {
+                if (Me._FinallyFunc != null && typeof Me._FinallyFunc === "function")
+                    Me._FinallyFunc(Me.Data, Me);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        var CheckReadState = function () {
+            if (Req.readyState != 4) return;
+
+            var StatusCode = Req.status;
+            console.info(`Response:${StatusCode}`);
+
+            switch (true) {
+                case StatusCode >= 200 && StatusCode < 300: return Onload();
+                case StatusCode == 0 || (StatusCode >= 400 && StatusCode < 500): return OnError();
+                case StatusCode >= 500: alert("URLが正しくないんじゃないかな…"); break;
+                case (Date.now() - NowTime) > 1e4: return OnTimeout();
+                default: alert("何かしらおかしいです…");
+            }
+            if (StatusCode != 0 && StatusCode == 200) {
+                return Onload();
+            } else if (StatusCode == 0) {
+                return OnError();
+            } else if ((Date.now() - NowTime) > 1e4) {
+                return OnTimeout();
+            }
+        };
+
+        this.Request.onreadystatechange = CheckReadState;
+    }
+};
+IEFetch.Type_Json = 1;
+IEFetch.Type_Binary = 2;
+IEFetch.Type_Text = 3;
+IEFetch.Request_Json = "application/json";
+IEFetch.Request_Text_Form = "application/x-www-form-urlencoded";
+IEFetch.Request_Form_Binary_Picture = "multipart/form-data";
+IEFetch.OriginURL = location.origin + "/SBChemical";
+
