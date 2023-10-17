@@ -250,8 +250,8 @@ class Judey {
             return this;
         };
         //InnerText
-        this.Text = (value) => {
-            if (value !== "") {
+        this.Text = (value = null) => {
+            if (value !== null) {
                 this.EachElem((elem, i) => {
                     if (elem.innerText !== (typeof value === "object" ? value[i] : value))
                         elem.innerText = typeof value === "object" ? value[i] : value;
